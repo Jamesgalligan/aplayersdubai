@@ -213,8 +213,6 @@
   .vvip .excl { position: absolute; top: 0; right: 0; padding: 6px 14px; border-bottom-left-radius: 12px; background: rgba(212,188,142,.14); color: var(--gold-lt); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
   .vvip h3 { display: flex; align-items: center; gap: 10px; }
   .vvip h3::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold-lt); }
-  .vvip .member { justify-self: start; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(212,188,142,.35); background: rgba(212,188,142,.08); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(242,240,234,.75); }
-  .vvip .member b { color: var(--gold-lt); font-weight: 700; }
   .vvip .lead { font-size: 14px; font-weight: 600; color: rgba(242,240,234,.85); }
   .vvip .head-col { display: grid; gap: 12px; align-content: start; grid-column: 1 / -1; }
   .vvip .ticks { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; column-gap: 32px; }
@@ -223,6 +221,10 @@
   .vvip .foot-row b { color: var(--gold-lt); }
   .tbtn.gold { border: 1px solid rgba(212,188,142,.55); color: var(--gold-lt); padding: 0 28px; margin: 0; }
   .tbtn.gold:hover { background: var(--gold-lt); color: var(--bg); }
+  .member-note { display: flex; width: max-content; max-width: 100%; margin: 22px auto 0; align-items: center; gap: 12px; padding: 6px 16px 6px 6px; border-radius: 999px; border: 1px solid rgba(142,107,58,.35); background: rgba(142,107,58,.06); font-size: 13px; color: var(--ink); }
+  .member-note span { flex: none; padding: 5px 11px; border-radius: 999px; background: var(--gold); color: #F8F6F1; font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .member-note em { font-style: normal; }
+  .member-note b { color: var(--gold); }
   .tix-note { margin-top: 26px; text-align: center; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-mute); }
 
   /* ---------- founders ---------- */
@@ -524,6 +526,7 @@
   <section class="light tickets" id="tickets" aria-labelledby="tix-title">
     <div class="wrap narrow">
       <h2 class="label" id="tix-title">Reserve Your Seat</h2>
+      <p class="member-note"><span>Members</span><em>A Players members receive <b>20% off</b> every ticket</em></p>
       <div class="tix">
         <div class="tcard" data-reveal>
           <h3>General Admission</h3>
@@ -555,7 +558,6 @@
             <h3>VVIP Private Table</h3>
             <p class="lead">Friday closed-door Mastermind Roundtable with the Mastermind speakers, a hypnosis session with Ebrahim &amp; a Private Dinner Experience at SushiSamba.</p>
             <p class="price" data-price="vvip"></p>
-            <p class="member">A Players members receive <b>20% off</b></p>
           </div>
           <ul class="ticks">
             <li>Everything in VIP</li>
@@ -640,7 +642,7 @@
       <div class="faq">
         <details><summary>Who should attend the A Players Dubai chapter?</summary><p>Founders serious about the long game who want to be in a room with people ahead of them, on the same path. Business owners at every scale, from the first hire to the hundredth.</p></details>
         <details><summary>What’s the schedule like?</summary><p>Friday is VVIP only: a closed-door mastermind roundtable with the Mastermind speakers and a hypnosis session with Ebrahim from 2:00 PM, then the VVIP private dinner experience at SushiSamba at 9:00 PM. Saturday is the main stage from 10:00 AM, with two hours of personalised roundtable workshops at the speakers’ tables, then an evening reception. Sunday is padel in the morning, then the Desert Evening Experience for VIP and VVIP guests: dinner with live entertainment and a DJ. VVIPs bring a plus-one.</p></details>
-        <details><summary>What pricing options are available?</summary><p>General Admission covers Saturday. VIP covers Saturday and Sunday. VVIP adds all of Friday, the closed-door roundtable and the private dinner at SushiSamba, plus a plus-one for the Sunday Desert Evening Experience. It is limited to 12 seats and needs an application or referral. A Players members receive 20% off.</p></details>
+        <details><summary>What pricing options are available?</summary><p>General Admission covers Saturday. VIP covers Saturday and Sunday. VVIP adds all of Friday, the closed-door roundtable and the private dinner at SushiSamba, plus a plus-one for the Sunday Desert Evening Experience. It is limited to 12 seats and needs an application or referral. A Players members receive 20% off every ticket.</p></details>
         <details><summary>Who are the speakers?</summary><p>Dan Henry, Jake Trinder, James Galligan, Marius Bulai, Christian Schütte and Ebrahim Turner, plus a special guest announced soon.</p></details>
         <details><summary>Where in Dubai is it?</summary><p>Friday is in a private boardroom, with dinner at SushiSamba. The Saturday venue is announced soon. Every address goes to ticket holders first.</p></details>
         <details><summary>How is this different from other networking events?</summary><p>It’s small on purpose. 50 seats and three days with the same people, so the conversations go past introductions.</p></details>
