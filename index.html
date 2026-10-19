@@ -205,10 +205,8 @@
   .tickets { padding-block: 80px 88px; }
   .tickets .label { color: var(--ink-mute); }
   .tix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 40px; }
-  .tcard { position: relative; border-radius: 18px; background: var(--bg); color: var(--fg); padding: 28px; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 14px; }
+  .tcard { position: relative; border-radius: 18px; background: var(--bg); color: var(--fg); padding: 28px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 14px; }
   .tcard h3 { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
-  .tcard .price { font-size: 40px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
-  .tcard .price small { font-size: 12px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin-left: 6px; }
   .tcard .days { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--gold-lt); }
   .ticks { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 12px; align-content: start; }
   .ticks li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; color: rgba(242,240,234,.82); }
@@ -611,7 +609,6 @@
       <div class="tix">
         <div class="tcard" data-reveal>
           <h3>General Admission</h3>
-          <p class="price" data-price="ga"></p>
           <p class="days">Saturday</p>
           <ul class="ticks">
             <li>Saturday Mastermind</li>
@@ -624,7 +621,6 @@
         <div class="tcard" data-reveal>
           <span class="rec">Recommended</span>
           <h3>VIP Experience</h3>
-          <p class="price" data-price="vip"></p>
           <p class="days">Saturday &amp; Sunday</p>
           <ul class="ticks">
             <li>Everything in GA</li>
@@ -638,7 +634,6 @@
           <div class="head-col">
             <h3>VVIP Private Table</h3>
             <p class="lead">Friday closed-door Mastermind Roundtable with the Mastermind speakers, a hypnosis session with Ebrahim &amp; a Private Dinner Experience at SushiSamba.</p>
-            <p class="price" data-price="vvip"></p>
           </div>
           <ul class="ticks">
             <li>Everything in VIP</li>
@@ -794,25 +789,18 @@
 </div>
 
 <script>
-  /* Every price and checkout link on the page comes from here.
-     price: null shows "On application" instead of a number.
+  /* Every checkout link on the page comes from here.
      checkout: "" falls back to an email enquiry for that tier. */
   var CFG = {
     doorsOpen: "2026-11-27T10:00:00Z", /* 2:00 PM Dubai time */
     tiers: {
-      ga:   { name: "General Admission", price: 550,  checkout: "https://whop.com/checkout/plan_YYU5hrqRegZe1" },
-      vip:  { name: "VIP",               price: 2000, checkout: "https://whop.com/checkout/plan_F9B8FVXzbSWAd" },
-      vvip: { name: "VVIP",              price: 3500, checkout: "https://whop.com/checkout/plan_Xs9ywioa28YAf" }
+      ga:   { name: "General Admission", checkout: "https://whop.com/checkout/plan_YYU5hrqRegZe1" },
+      vip:  { name: "VIP",               checkout: "https://whop.com/checkout/plan_F9B8FVXzbSWAd" },
+      vvip: { name: "VVIP",              checkout: "https://whop.com/checkout/plan_Xs9ywioa28YAf" }
     }
   };
 
   (function () {
-    var eur = function (n) { return "€" + n.toLocaleString("en-IE"); };
-    document.querySelectorAll("[data-price]").forEach(function (el) {
-      var t = CFG.tiers[el.getAttribute("data-price")];
-      el.innerHTML = t.price == null ? "On application" : eur(t.price) + "<small>per seat</small>";
-      if (t.price == null) el.style.fontSize = "28px";
-    });
     document.querySelectorAll("[data-tier]").forEach(function (a) {
       var t = CFG.tiers[a.getAttribute("data-tier")];
       a.href = t.checkout || "mailto:hello@aplayerstour.com?subject=" +
