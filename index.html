@@ -393,7 +393,27 @@
     .lc-back { backdrop-filter: none; }
     .grain { display: none; }
     .js [data-reveal] { opacity: 1; transform: none; transition: none; }
+    /* Stats: keep labels off the screen edge. */
+    .stats { padding-inline: var(--gut); gap: 8px; }
+    .stats span { font-size: 9.5px; letter-spacing: .14em; }
+    /* Itinerary: time above each session so the text gets the full width. */
+    .chap h3 { font-size: 38px; }
+    .chap .desc { font-size: 17px; }
+    .run li { grid-template-columns: minmax(0, 1fr); gap: 4px; padding-block: 14px; }
+    .run .tm { padding-top: 0; }
+    .run .vv { display: table; margin: 6px 0 2px; }
+    /* City story reads left-aligned on a phone. */
+    .city-sec { text-align: left; }
+    .city-copy { margin-inline: 0; }
+    /* Founders: open on the first lines, the rest on request. */
+    .letter.clip p:nth-of-type(n+3) { display: none; }
+    .letter-more { padding: 0; display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; min-height: 44px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold-lt); }
+    .letter-more::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-2px) rotate(45deg); }
+    /* Footer: brand, then links in a row. */
+    .foot-grid { flex-direction: column; gap: 22px; }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 8px 22px; }
   }
+  @media (min-width: 721px) { .letter-more { display: none; } }
 </style>
 <script>document.documentElement.classList.add("js");</script>
 </head>
@@ -829,6 +849,17 @@
     function set() { bar.classList.toggle("on", past && !atTix); }
     new IntersectionObserver(function (es) { past = !es[0].isIntersecting; set(); }).observe(hero);
     new IntersectionObserver(function (es) { atTix = es[0].isIntersecting; set(); }, { threshold: .1 }).observe(tix);
+  })();
+
+  /* Founders' letters open on their first lines on phones. */
+  (function () {
+    document.querySelectorAll(".letter").forEach(function (l) {
+      l.classList.add("clip");
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "letter-more"; b.textContent = "Read the full letter";
+      b.addEventListener("click", function () { l.classList.remove("clip"); b.remove(); });
+      l.appendChild(b);
+    });
   })();
 
   /* Speakers counter on the phone rail; tickers pause when off screen. */
