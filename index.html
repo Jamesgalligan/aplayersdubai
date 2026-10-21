@@ -2,6 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+  /* Site block. Every tracking push reads event_city and event_id from here. */
+  window.APD_SITE = { event_city: "dubai", event_id: "13431c85-f0ba-499b-8bae-2faf53c68a30" };
+  window.dataLayer = window.dataLayer || [];
+</script>
+<!-- Google Tag Manager: owns all browser tracking on this site. -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WL5TT2WF');</script>
+<!-- End Google Tag Manager -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>A Players Dubai · November 27–29, 2026</title>
 <meta name="description" content="A Players Global Tour, Dubai. A VVIP mastermind, a full day on the main stage, and the desert to close. November 27–29, 2026.">
@@ -416,6 +428,10 @@
 <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WL5TT2WF"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <div class="grain" aria-hidden="true"></div>
 
 <header class="nav" id="nav">
@@ -883,7 +899,7 @@
 <script>
   /* Ticket lead capture. Every ticket button in #tickets opens the form. On submit the lead
      goes to the events webhook, then the buyer continues to the href the button already had.
-     Pixel events match the Marbella ticket popup. */
+     Browser tracking goes through GTM via window.dataLayer; no pixel code lives on the page. */
   (function () {
     var HOOK = "https://columapc.app.n8n.cloud/webhook/gt-event-capture";
     var PENDING = "apd_lead_pending", FIRST_UTM = "apd_utm_first";
@@ -946,9 +962,31 @@
       var l = load("trakyo_id"); if (l) return l.trim();
       try { return new URLSearchParams(location.search).get("trakyo_id") || ""; } catch (e) { return ""; }
     }
-    function track(fb, ga) {
-      try { if (window.fbq) window.fbq.apply(window, fb); } catch (e) {}
-      try { if (window.gtag && ga) window.gtag.apply(window, ga); } catch (e) {}
+
+    // Attribution for checkout metadata: utm_* and fbclid from the first landing of this session.
+    var ATTR = "apd_attr", ATTR_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "fbclid"];
+    (function () {
+      try {
+        if (sessionStorage.getItem(ATTR)) return;
+        var q = new URLSearchParams(location.search), a = {};
+        ATTR_KEYS.forEach(function (k) { var v = (q.get(k) || "").trim(); if (v) a[k] = v; });
+        sessionStorage.setItem(ATTR, JSON.stringify(a));
+      } catch (e) {}
+    })();
+    window.apdAttribution = function () {
+      try { return JSON.parse(sessionStorage.getItem(ATTR) || "{}") || {}; } catch (e) { return {}; }
+    };
+
+    // Each dataLayer step fires once per visitor.
+    function pushOnce(step, fields) {
+      var flag = "apd_dl_" + step;
+      if (load(flag)) return;
+      var site = window.APD_SITE || {};
+      var o = { event: step, event_city: site.event_city, event_id: site.event_id };
+      Object.keys(fields || {}).forEach(function (k) { o[k] = fields[k]; });
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(o);
+      save(flag, "1");
     }
 
     // Country codes: a short list of likely ones first, then every country A–Z.
@@ -1047,6 +1085,11 @@
       if (bad.length) { bad[0].focus(); return null; }
       return out;
     }
+    // The form opens with focus already in it, so a "touch" is the first keystroke or tap.
+    function started() { pushOnce("event_form_start"); }
+    form.addEventListener("input", started);
+    form.addEventListener("pointerdown", started);
+
     form.addEventListener("input", function (e) {
       var box = e.target.closest(".lc-f"); if (box && box.classList.contains("bad")) mark(box, "");
     });
@@ -1074,7 +1117,7 @@
       var body = JSON.stringify(p);
       console.info("[lead] POST " + HOOK + "\n" + body);
 
-      track(["track", "Lead"], ["event", "generate_lead", { tier: tier.name }]);
+      pushOnce("event_lead_capture", { email: v.email, phone: v.phone, first_name: v.firstName, last_name: v.lastName });
       save(PENDING, body); inflight = body;
       var sent = post(body).then(function (ok) {
         if (ok) save(PENDING, null); else console.warn("[lead] webhook failed, kept for retry");
@@ -1085,8 +1128,6 @@
           if (res === "timeout") console.warn("[lead] webhook slow, continuing; kept for retry");
           // The keepalive request outlives this page, and the stored copy covers a failure.
           inflight = null;
-          if (tier.apply) track(["track", "SubmitApplication"], ["event", "vvip_application_submit"]);
-          else track(["track", "InitiateCheckout"], ["event", "begin_checkout", { tier: tier.name }]);
           if (/^https?:/i.test(dest)) { location.href = dest; return; }
           // No checkout link on this button yet: confirm instead of opening a mail app.
           busy = false; go.hidden = true; done.hidden = false;
