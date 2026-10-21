@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>
+  /* Site block. Every tracking push reads event_city and event_id from here. */
+  window.APD_SITE = { event_city: "dubai", event_id: "13431c85-f0ba-499b-8bae-2faf53c68a30" };
+  window.dataLayer = window.dataLayer || [];
+</script>
+<!-- Google Tag Manager: owns all browser tracking on this site. -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WL5TT2WF');</script>
+<!-- End Google Tag Manager -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>You're in · A Players Dubai</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#111311">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&display=swap">
+<style>
+  :root {
+    --bg: #111311; --fg: #F2F0EA; --mute: #8C8C88; --line: rgba(242,240,234,.1); --gold-lt: #D4BC8E;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --serif: "Cormorant Garamond", Georgia, serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 48px 16px;
+    background: var(--bg); color: var(--fg); font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  main { width: 100%; max-width: 560px; text-align: center; }
+  .k { font-family: var(--serif); font-style: italic; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-lt); }
+  h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(56px, 14vw, 104px); line-height: .95; letter-spacing: -.02em; margin: 14px 0 0; }
+  .when { margin: 22px 0 0; font-size: 15px; color: rgba(242,240,234,.75); }
+  .when b { color: var(--fg); font-weight: 600; }
+  .note { margin: 28px auto 0; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--mute); max-width: 420px; }
+  .back { display: inline-grid; place-items: center; min-height: 48px; margin-top: 30px; padding: 0 26px; border-radius: 999px;
+    background: var(--fg); color: var(--bg); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; }
+</style>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WL5TT2WF"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<main>
+  <p class="k" id="tier">A Players Dubai</p>
+  <h1>You’re in.</h1>
+  <p class="when"><b>Dubai · 27–29 November 2026</b></p>
+  <p class="note">Your receipt is on its way from Whop. We’ll be in touch with the schedule, venue details and everything you need before you fly.</p>
+  <a class="back" href="../">Back to the event</a>
+</main>
+<script>
+  /* Confirms the paid order with the tracking Worker, then pushes event_purchase once per
+     order. Value, currency and order_id come from Whop through the Worker; contact details
+     and event_uid come from the record the checkout step saved on this device. */
+  (function () {
+    var API = "";  /* same Worker as CFG.api on the main page */
+    var q = new URLSearchParams(location.search);
+    var uid = q.get("event_uid") || "", tierParam = (q.get("tier") || "").toUpperCase();
+    var NAMES = { GA: "General Admission", VIP: "VIP Experience" };
+    if (NAMES[tierParam]) document.getElementById("tier").textContent = NAMES[tierParam] + " · A Players Dubai";
+
+    function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    var saved = {}; try { saved = JSON.parse(load("apd_checkout_" + uid) || "{}") || {}; } catch (e) {}
+
+    if (!API || !/^[0-9a-f-]{36}$/i.test(uid)) return;
+    var pay = ["payment_id", "receipt_id", "id"].map(function (k) { return q.get(k); })
+      .filter(function (v) { return /^pay_/.test(v || ""); })[0];
+    var url = API + "/order?event_uid=" + encodeURIComponent(uid) + (pay ? "&payment_id=" + encodeURIComponent(pay) : "");
+
+    // The webhook can land a few seconds after Whop redirects, so ask for up to a minute.
+    var tries = 0;
+    (function ask() {
+      fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (o) {
+        if (o && o.order_id) return push(o);
+        if (++tries < 20) setTimeout(ask, 3000);
+        else console.warn("[purchase] order not confirmed for", uid);
+      }, function () { if (++tries < 20) setTimeout(ask, 3000); });
+    })();
+
+    function push(o) {
+      var flag = "apd_purchase_" + o.order_id;
+      if (load(flag)) return;  // a refresh or a second visit never counts the order twice
+      var site = window.APD_SITE || {};
+      var e = { event: "event_purchase", event_city: site.event_city, event_id: site.event_id,
+        tier: o.tier, value: o.value, currency: o.currency, order_id: o.order_id, event_uid: uid };
+      ["email", "phone", "first_name", "last_name"].forEach(function (k) { if (saved[k]) e[k] = saved[k]; });
+      window.dataLayer.push(e);
+      save(flag, "1");
+    }
+  })();
+</script>
+</body>
+</html>
