@@ -808,9 +808,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>
   /* Every checkout link on the page comes from here.
      checkout: "" falls back to an email enquiry for that tier.
-     api: the tracking Worker. GA and VIP checkouts are made there; the plan link is the fallback. */
+     api: the n8n checkout webhook. GA and VIP checkouts are made there; the plan link is the fallback. */
   var CFG = {
-    api: "",
+    api: "https://columapc.app.n8n.cloud/webhook/gt-checkout",
     doorsOpen: "2026-11-27T10:00:00Z", /* 2:00 PM Dubai time */
     tiers: {
       ga:   { name: "General Admission", checkout: "https://whop.com/checkout/plan_YYU5hrqRegZe1" },
@@ -1141,25 +1141,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       var m = document.cookie.match(new RegExp("(?:^|; )" + n + "=([^;]*)"));
       return m ? decodeURIComponent(m[1]) : "";
     }
-    // GA and VIP: the Worker makes a Whop checkout that carries this visitor's attribution and a
-    // fresh event_uid, and reads the real price from Whop. If it can't, the buyer still gets the
-    // plain plan link, so a sale is never blocked.
+    function uuid() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      var b = new Uint8Array(16); crypto.getRandomValues(b);
+      b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+      var h = Array.prototype.map.call(b, function (x) { return (x + 256).toString(16).slice(1); }).join("");
+      return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+    }
+    // GA and VIP: n8n makes a Whop checkout that carries this visitor's attribution and a fresh
+    // event_uid, and reads the real price from Whop. If it can't, the buyer still gets the plain
+    // plan link, so a sale is never blocked.
     function toCheckout(v) {
       var api = window.CFG && CFG.api;
-      if (!api) { location.href = dest; return; }
+      if (!api || (tier.type !== "GA" && tier.type !== "VIP")) { location.href = dest; return; }
       var ctl = window.AbortController ? new AbortController() : null;
       var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
-      fetch(api + "/checkout", {
+      var site = window.APD_SITE || {}, a = window.apdAttribution ? window.apdAttribution() : {}, u = utm();
+      fetch(api, {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl ? ctl.signal : undefined,
         body: JSON.stringify({
-          tier: tier.type, email: v.email, phone: v.phone,
-          attribution: window.apdAttribution ? window.apdAttribution() : {},
-          fbp: cookie("_fbp"), fbc: cookie("_fbc")
+          event_city: site.event_city, event_id: site.event_id, tier: tier.type, event_uid: uuid(),
+          utm_source: a.utm_source || u.utm_source, utm_medium: a.utm_medium || u.utm_medium,
+          utm_campaign: a.utm_campaign || u.utm_campaign, utm_content: a.utm_content || u.utm_content,
+          fbclid: a.fbclid, trakyo_id: trakyoId(), fbp: cookie("_fbp"), fbc: cookie("_fbc"),
+          email: v.email, phone: v.phone, user_agent: navigator.userAgent,
+          page_url: location.origin + location.pathname + location.search
         })
       })
         .then(function (r) { if (!r.ok) throw new Error("checkout " + r.status); return r.json(); })
         .then(function (c) {
           clearTimeout(timer);
+          if (!c || !c.purchase_url) throw new Error("checkout came back without a purchase_url");
           var rec = { tier: c.tier, value: c.value, currency: c.currency, event_uid: c.event_uid,
             email: v.email, phone: v.phone, first_name: v.firstName, last_name: v.lastName };
           save("apd_checkout_" + c.event_uid, JSON.stringify(rec));  // /thanks reads this back
@@ -1168,7 +1180,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         })
         .catch(function (e) {
           clearTimeout(timer);
-          console.warn("[checkout] tracking Worker unavailable, using the plan link", e);
+          console.warn("[checkout] n8n checkout unavailable, using the plan link", e);
           location.href = dest;
         });
     }

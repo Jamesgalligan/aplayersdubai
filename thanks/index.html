@@ -55,11 +55,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <a class="back" href="../">Back to the event</a>
 </main>
 <script>
-  /* Confirms the paid order with the tracking Worker, then pushes event_purchase once per
-     order. Value, currency and order_id come from Whop through the Worker; contact details
-     and event_uid come from the record the checkout step saved on this device. */
+  /* Pushes event_purchase once per order. Tier, value and currency are the ones n8n read from
+     Whop when it made this checkout, saved on this device under the checkout's event_uid; the
+     order id comes from Whop's redirect. The paid sale itself is recorded server side by n8n. */
   (function () {
-    var API = "";  /* same Worker as CFG.api on the main page */
     var q = new URLSearchParams(location.search);
     var uid = q.get("event_uid") || "", tierParam = (q.get("tier") || "").toUpperCase();
     var NAMES = { GA: "General Admission", VIP: "VIP Experience" };
@@ -67,33 +66,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-    var saved = {}; try { saved = JSON.parse(load("apd_checkout_" + uid) || "{}") || {}; } catch (e) {}
+    if (!/^[0-9a-f-]{36}$/i.test(uid)) return;
+    var saved = null; try { saved = JSON.parse(load("apd_checkout_" + uid) || "null"); } catch (e) {}
+    if (!saved || !saved.value || !saved.currency) return;  // not a checkout started on this device
 
-    if (!API || !/^[0-9a-f-]{36}$/i.test(uid)) return;
-    var pay = ["payment_id", "receipt_id", "id"].map(function (k) { return q.get(k); })
-      .filter(function (v) { return /^pay_/.test(v || ""); })[0];
-    var url = API + "/order?event_uid=" + encodeURIComponent(uid) + (pay ? "&payment_id=" + encodeURIComponent(pay) : "");
-
-    // The webhook can land a few seconds after Whop redirects, so ask for up to a minute.
-    var tries = 0;
-    (function ask() {
-      fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (o) {
-        if (o && o.order_id) return push(o);
-        if (++tries < 20) setTimeout(ask, 3000);
-        else console.warn("[purchase] order not confirmed for", uid);
-      }, function () { if (++tries < 20) setTimeout(ask, 3000); });
-    })();
-
-    function push(o) {
-      var flag = "apd_purchase_" + o.order_id;
-      if (load(flag)) return;  // a refresh or a second visit never counts the order twice
-      var site = window.APD_SITE || {};
-      var e = { event: "event_purchase", event_city: site.event_city, event_id: site.event_id,
-        tier: o.tier, value: o.value, currency: o.currency, order_id: o.order_id, event_uid: uid };
-      ["email", "phone", "first_name", "last_name"].forEach(function (k) { if (saved[k]) e[k] = saved[k]; });
-      window.dataLayer.push(e);
-      save(flag, "1");
-    }
+    var order = ["payment_id", "receipt_id", "id"].map(function (k) { return q.get(k); })
+      .filter(function (v) { return /^pay_/.test(v || ""); })[0] || "";
+    var flag = "apd_purchase_" + (order || uid);
+    if (load(flag)) return;  // a refresh or a second visit never counts the order twice
+    var site = window.APD_SITE || {};
+    var e = { event: "event_purchase", event_city: site.event_city, event_id: site.event_id,
+      tier: saved.tier || tierParam, value: saved.value, currency: saved.currency, event_uid: uid };
+    if (order) e.order_id = order;
+    ["email", "phone", "first_name", "last_name"].forEach(function (k) { if (saved[k]) e[k] = saved[k]; });
+    window.dataLayer.push(e);
+    save(flag, "1");
   })();
 </script>
 </body>
