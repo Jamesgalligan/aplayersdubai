@@ -67,17 +67,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
     if (!/^[0-9a-f-]{36}$/i.test(uid)) return;
-    var saved = null; try { saved = JSON.parse(load("apd_checkout_" + uid) || "null"); } catch (e) {}
-    if (!saved || !saved.value || !saved.currency) return;  // not a checkout started on this device
+    // Value and contact details are only here when the checkout started on this device.
+    var saved = {}; try { saved = JSON.parse(load("apd_checkout_" + uid) || "{}") || {}; } catch (e) {}
 
-    var order = ["payment_id", "receipt_id", "id"].map(function (k) { return q.get(k); })
+    // Whop's docs name the order id param differently in different places, so take any of them.
+    var order = ["payment_id", "payment", "receipt_id", "id"].map(function (k) { return q.get(k); })
       .filter(function (v) { return /^pay_/.test(v || ""); })[0] || "";
     var flag = "apd_purchase_" + (order || uid);
     if (load(flag)) return;  // a refresh or a second visit never counts the order twice
     var site = window.APD_SITE || {};
     var e = { event: "event_purchase", event_city: site.event_city, event_id: site.event_id,
-      tier: saved.tier || tierParam, value: saved.value, currency: saved.currency, event_uid: uid };
+      tier: saved.tier || tierParam, event_uid: uid };
     if (order) e.order_id = order;
+    if (saved.value && saved.currency) { e.value = saved.value; e.currency = saved.currency; }
     ["email", "phone", "first_name", "last_name"].forEach(function (k) { if (saved[k]) e[k] = saved[k]; });
     window.dataLayer.push(e);
     save(flag, "1");

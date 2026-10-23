@@ -1153,14 +1153,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     // plan link, so a sale is never blocked.
     function toCheckout(v) {
       var api = window.CFG && CFG.api;
-      if (!api || (tier.type !== "GA" && tier.type !== "VIP")) { location.href = dest; return; }
+      if (tier.type !== "GA" && tier.type !== "VIP") { location.href = dest; return; }
+      var site = window.APD_SITE || {}, a = window.apdAttribution ? window.apdAttribution() : {}, u = utm();
+      var event_uid = uuid();
+      // Pushed before n8n is asked, so it counts on the fallback path too. The price is only
+      // known once Whop answers, so value is left out here.
+      var view = { event: "event_checkout_view", tier: tier.type, event_uid: event_uid,
+        event_city: site.event_city, event_id: site.event_id, currency: "EUR" };
+      if (v.email) view.email = v.email;
+      if (v.phone) view.phone = v.phone;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(view);
+      if (!api) { location.href = dest; return; }
       var ctl = window.AbortController ? new AbortController() : null;
       var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
-      var site = window.APD_SITE || {}, a = window.apdAttribution ? window.apdAttribution() : {}, u = utm();
       fetch(api, {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl ? ctl.signal : undefined,
         body: JSON.stringify({
-          event_city: site.event_city, event_id: site.event_id, tier: tier.type, event_uid: uuid(),
+          event_city: site.event_city, event_id: site.event_id, tier: tier.type, event_uid: event_uid,
           utm_source: a.utm_source || u.utm_source, utm_medium: a.utm_medium || u.utm_medium,
           utm_campaign: a.utm_campaign || u.utm_campaign, utm_content: a.utm_content || u.utm_content,
           fbclid: a.fbclid, trakyo_id: trakyoId(), fbp: cookie("_fbp"), fbc: cookie("_fbc"),
@@ -1172,10 +1182,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         .then(function (c) {
           clearTimeout(timer);
           if (!c || !c.purchase_url) throw new Error("checkout came back without a purchase_url");
-          var rec = { tier: c.tier, value: c.value, currency: c.currency, event_uid: c.event_uid,
+          var rec = { tier: c.tier, value: c.value, currency: c.currency, event_uid: event_uid,
             email: v.email, phone: v.phone, first_name: v.firstName, last_name: v.lastName };
-          save("apd_checkout_" + c.event_uid, JSON.stringify(rec));  // /thanks reads this back
-          pushOnce("event_checkout_view", rec);
+          save("apd_checkout_" + event_uid, JSON.stringify(rec));  // /thanks reads this back
           location.href = c.purchase_url;
         })
         .catch(function (e) {
